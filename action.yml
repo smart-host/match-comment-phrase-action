@@ -1,11 +1,26 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'match-comment-phrase-action'
+description: 'matches a phrase within a github comment and outputs a boolean value when found by a specific mode'
+author: 'Smart Host'
+branding:
+  icon: 'bell'
+  color: 'purple'
 inputs:
-  milliseconds: # change this
+  phrase:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'the phrase to look for in the issue comment'
+  mode:
+    description: 'the mode is how the action checks for the phrase within the comment. possible values: starts_line | starts_comment | within'
+    default: 'starts_line'
+  include_code:
+    description: 'boolean to determine if the action should also search in code snippets'
+    default: 'false'
+  pr_only:
+    description: 'When "true", limits action to run for pull requests only. Will throw error if pull request context is not found'
+    default: 'false'
+  reactions:
+    description: 'Comma separated list of valid reactions to add to the comment if phrase is found'
+  GITHUB_TOKEN:
+    description: 'The github token of the run. This can also be provided as an environment variable'
 runs:
   using: 'node16'
   main: 'dist/index.js'

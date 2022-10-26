@@ -1,105 +1,58 @@
-<p align="center">
-  <a href="https://github.com/actions/typescript-action/actions"><img alt="typescript-action status" src="https://github.com/actions/typescript-action/workflows/build-test/badge.svg"></a>
-</p>
+# match-comment-phrase-action
 
-# Create a JavaScript Action using TypeScript
+## Example usage in a workflow
 
-Use this template to bootstrap the creation of a TypeScript action.:rocket:
+Your workflow needs to listen to the following events:
 
-This template includes compilation support, tests, a validation workflow, publishing, and versioning guidance.  
-
-If you are new, there's also a simpler introduction.  See the [Hello World JavaScript Action](https://github.com/actions/hello-world-javascript-action)
-
-## Create an action from this template
-
-Click the `Use this Template` and provide the new repo details for your action
-
-## Code in Main
-
-> First, you'll need to have a reasonably modern version of `node` handy. This won't work with versions older than 9, for instance.
-
-Install the dependencies  
-```bash
-$ npm install
+```yml
+on:
+  issue_comment:
+    types: [created, edited]
 ```
 
-Build the typescript and package it for distribution
-```bash
-$ npm run build && npm run package
+And then you can use the action in your jobs like this:
+
+```yml
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: smart-host/match-comment-phrase-action@master
+        id: check
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+        with:
+          phrase: '/preview'
+          reactions: eyes
+          mode: starts_line
+      - run: 'echo Found it!'
+        if: steps.check.outputs.match_found == 'true'
 ```
 
-Run the tests :heavy_check_mark:  
-```bash
-$ npm test
+Reactions must be one of the reactions here: https://developer.github.com/v3/reactions/#reaction-types
+And if you specify a reaction, you have to provide the `GITHUB_TOKEN` env variable.
 
- PASS  ./index.test.js
-  ✓ throws invalid number (3ms)
-  ✓ wait 500 ms (504ms)
-  ✓ test runs (95ms)
+## Modes
 
-...
-```
+| Output         | Description                                         |
+| -------------- | --------------------------------------------------- |
+| starts_line    | Checks if phrase starts any line of the comment     |
+| starts_comment | Checks if phrase is at the beginning of the comment |
+| within         | Checks if phrase is anywhere within the comment     |
 
-## Change action.yml
+## Inputs
 
-The action.yml defines the inputs and output for your action.
+| Input        | Required?                      | Description                                                                                                                                  |
+| ------------ | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| phrase       | Yes                            | the phrase to look for in the issue comment. eg '/preview'                                                                                   |
+| mode         | No <br/>default: 'starts_line' | the mode is how the action checks for the phrase within the comment. possible values: starts_line, starts_comment, within                    |
+| include_code | No <br/>default: 'false'       | boolean to determine if the action should also search in code blocks or simple code snippets. Only practical with the "within" mode snippets |
+| pr_only      | No <br/>default 'false'        | 'When "true", limits action to run for pull requests only. Will throw error if pull request context is not found'                            |
+| reactions    | No <br/> default ''            | Comma separated list of valid reactions to add to the comment if phrase is found. For example, "rocket".                                     |
 
-Update the action.yml with your name, description, inputs and outputs for your action.
+## Outputs
 
-See the [documentation](https://help.github.com/en/articles/metadata-syntax-for-github-actions)
-
-## Change the Code
-
-Most toolkit and CI/CD operations involve async operations so the action is run in an async function.
-
-```javascript
-import * as core from '@actions/core';
-...
-
-async function run() {
-  try { 
-      ...
-  } 
-  catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
-run()
-```
-
-See the [toolkit documentation](https://github.com/actions/toolkit/blob/master/README.md#packages) for the various packages.
-
-## Publish to a distribution branch
-
-Actions are run from GitHub repos so we will checkin the packed dist folder. 
-
-Then run [ncc](https://github.com/zeit/ncc) and push the results:
-```bash
-$ npm run package
-$ git add dist
-$ git commit -a -m "prod dependencies"
-$ git push origin releases/v1
-```
-
-Note: We recommend using the `--license` option for ncc, which will create a license file for all of the production node modules used in your project.
-
-Your action is now published! :rocket: 
-
-See the [versioning documentation](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-
-## Validate
-
-You can now validate the action by referencing `./` in a workflow in your repo (see [test.yml](.github/workflows/test.yml))
-
-```yaml
-uses: ./
-with:
-  milliseconds: 1000
-```
-
-See the [actions tab](https://github.com/actions/typescript-action/actions) for runs of this action! :rocket:
-
-## Usage:
-
-After testing you can [create a v1 tag](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md) to reference the stable and latest V1 action
+| Output       | Description                                             |
+| ------------ | ------------------------------------------------------- |
+| match_found  | 'true' or 'false' depending on if the phrase was found. |
+| comment_body | The comment body.                                       |
